@@ -244,6 +244,26 @@ test("일부 수영장을 읽지 못해도 읽은 수영장의 강좌는 돌려�
   ]);
 });
 
+test("수영장을 고르면 그 수영장만 읽는다", async () => {
+  const requested: string[] = [];
+  const site = fakeSites({
+    fmcs: { YCS02: [fmcsRow()], GURO01: [fmcsRow({ class_nm: "구로 강좌" })] },
+  });
+  const recording = (url: string, init?: RequestInit) => {
+    requested.push(url + (typeof init?.body === "string" ? `?${init.body}` : ""));
+    return site(url, init);
+  };
+
+  const result = await readLectures(recording, TODAY, ["yangcheon-ycs02", "gangseo-01"]);
+
+  if (!result.ok) throw new Error("읽기에 실패했다");
+  expect(result.lectures.map((l) => l.poolId)).toEqual(["yangcheon-ycs02"]);
+  expect(requested).toHaveLength(2);
+  expect(requested.some((url) => url.includes("YCS02"))).toBe(true);
+  expect(requested.some((url) => url.includes("comcd=01"))).toBe(true);
+  expect(requested.some((url) => url.includes("gurosisul") || url.includes("efmc"))).toBe(false);
+});
+
 test("모든 수영장을 읽지 못하면 읽기 실패로 알린다", async () => {
   const result = await readLectures(fakeSites({ failing: ["://"] }), TODAY);
 

@@ -8,12 +8,14 @@ import {
 } from "@/components/ui/table";
 
 import type { Lecture } from "./lecture";
+import { WatchToggle } from "./watch-toggle";
 
 export function LectureTable({ lectures }: { lectures: Lecture[] }) {
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>알림</TableHead>
           <TableHead>구</TableHead>
           <TableHead>수영장</TableHead>
           <TableHead>소분류</TableHead>
@@ -30,6 +32,9 @@ export function LectureTable({ lectures }: { lectures: Lecture[] }) {
       <TableBody>
         {lectures.map((lecture, index) => (
           <TableRow key={`${lecture.poolId}-${index}`}>
+            <TableCell>
+              <WatchToggle lecture={lecture} />
+            </TableCell>
             <TableCell>{lecture.district}</TableCell>
             <TableCell>{lecture.poolName}</TableCell>
             <TableCell>{lecture.category}</TableCell>
@@ -40,7 +45,11 @@ export function LectureTable({ lectures }: { lectures: Lecture[] }) {
             <TableCell className="text-right">{lecture.capacity}</TableCell>
             <TableCell>{lecture.target}</TableCell>
             <TableCell>{lecture.teacher}</TableCell>
-            <TableCell>{lecture.applyStatus}</TableCell>
+            <TableCell
+              className={lecture.applyStatus === "접수하기" ? "font-medium text-blue-600" : "text-black"}
+            >
+              {lecture.applyStatus}
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>

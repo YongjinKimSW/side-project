@@ -1,4 +1,10 @@
 export type { Lecture } from "./lecture";
+export { lectureKey } from "./lecture-key";
+export { LectureWatcher } from "./lecture-watcher";
+export { TelegramSettings } from "./telegram-settings";
+export { WatchToggle } from "./watch-toggle";
+export { findOpenedSeats } from "./seat-change";
+export type { WatchedLecture } from "./seat-change";
 export { LectureFilterForm } from "./lecture-filter-form";
 export { LectureTable } from "./lecture-table";
 export { filterFromSearchParams } from "./filter-from-search-params";

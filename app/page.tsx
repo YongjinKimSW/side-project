@@ -10,6 +10,8 @@ import {
 import {
   LectureFilterForm,
   LectureTable,
+  LectureWatcher,
+  TelegramSettings,
   filterFromSearchParams,
   filterLectures,
   readLectures,
@@ -41,6 +43,8 @@ export default async function Home({
           강좌를 수영장, 요일, 시간대로 걸러 볼 수 있습니다.
         </p>
       </header>
+      <LectureWatcher />
+      <TelegramSettings />
       <LectureFilterForm filter={filter} />
       {!result.ok ? (
         <Alert variant="destructive">

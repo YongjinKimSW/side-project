@@ -33,10 +33,13 @@ function readPool(pool: Pool, fetchSite: FetchSite, today: string): Promise<Lect
  */
 export async function readLectures(
   fetchSite: FetchSite = fetchSiteFresh,
-  today: string = seoulToday()
+  today: string = seoulToday(),
+  /** 읽을 수영장. 없으면 모든 수영장을 읽는다. */
+  poolIds?: string[]
 ): Promise<ReadLecturesResult> {
+  const pools = poolIds ? POOLS.filter((pool) => poolIds.includes(pool.id)) : POOLS;
   const settled = await Promise.allSettled(
-    POOLS.map((pool) => readPool(pool, fetchSite, today))
+    pools.map((pool) => readPool(pool, fetchSite, today))
   );
   const lectures: Lecture[] = [];
   const unreadablePools: PoolRef[] = [];
@@ -44,10 +47,10 @@ export async function readLectures(
     if (result.status === "fulfilled") {
       lectures.push(...result.value);
     } else {
-      console.error(`[pool-lectures] ${POOLS[index].id} 읽기 실패:`, result.reason);
-      unreadablePools.push(poolRef(POOLS[index]));
+      console.error(`[pool-lectures] ${pools[index].id} 읽기 실패:`, result.reason);
+      unreadablePools.push(poolRef(pools[index]));
     }
   });
-  if (unreadablePools.length === POOLS.length) return { ok: false };
+  if (pools.length > 0 && unreadablePools.length === pools.length) return { ok: false };
   return { ok: true, lectures, unreadablePools };
 }

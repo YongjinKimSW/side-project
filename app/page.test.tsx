@@ -62,6 +62,17 @@ test("강좌 목록을 구, 수영장, 요일, 시간, 잔여석, 정원과 함�
   expect(within(table).getByRole("row", { name: /구로반/ })).toBeInTheDocument();
 });
 
+test("표의 모든 강좌에 알림 체크가 있다", async () => {
+  stubSites();
+
+  await renderHome();
+
+  const table = screen.getByRole("table");
+  expect(within(table).getByRole("columnheader", { name: "알림" })).toBeInTheDocument();
+  expect(within(table).getByRole("checkbox", { name: "알림: 월수금반" })).toBeInTheDocument();
+  expect(within(table).getByRole("checkbox", { name: "알림: 구로반" })).toBeInTheDocument();
+});
+
 test("필터에서 수영장을 구별로 묶어 고를 수 있고 14곳이 모두 나온다", async () => {
   stubSites();
 
