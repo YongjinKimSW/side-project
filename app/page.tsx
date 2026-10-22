@@ -1,67 +1,67 @@
-import Image from "next/image";
-import { ArrowUpRightIcon, TriangleIcon } from "lucide-react";
+import { AlertCircleIcon } from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  LectureFilterForm,
+  LectureTable,
+  filterFromSearchParams,
+  filterLectures,
+  readLectures,
+} from "@/features/pool-lectures";
 
-export default function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const filter = filterFromSearchParams(await searchParams);
+  const result = await readLectures();
+  const lectures = result.ok ? filterLectures(result.lectures, filter) : [];
+
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-6 py-24">
-      <div className="flex w-full max-w-xl flex-col gap-10">
-        <Image
-          className="h-5 w-[100px] dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col gap-4">
-          <h1 className="font-heading text-3xl font-semibold tracking-tight text-balance">
-            To get started, edit the{" "}
-            <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.9em]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-foreground underline underline-offset-4"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-foreground underline underline-offset-4"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10">
+      <header className="flex flex-col gap-2">
+        <h1 className="font-heading text-2xl font-semibold tracking-tight">
+          수영장 강좌
+        </h1>
+        <p className="text-muted-foreground">
+          목동문화체육센터의 접수 중인 수영 강좌를 요일과 시간대로 걸러 볼 수
+          있습니다.
+        </p>
+      </header>
+      <LectureFilterForm filter={filter} />
+      {!result.ok ? (
+        <Alert variant="destructive">
+          <AlertCircleIcon />
+          <AlertTitle>강좌 정보를 읽지 못했습니다</AlertTitle>
+          <AlertDescription>
+            공단 사이트에서 강좌 목록을 가져오지 못했습니다. 잠시 뒤 다시 시도해
+            주세요.
+          </AlertDescription>
+        </Alert>
+      ) : lectures.length === 0 ? (
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>조건에 맞는 강좌가 없습니다</EmptyTitle>
+            <EmptyDescription>
+              요일이나 시간대를 넓혀 다시 걸러 보세요.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <section className="flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground">
+            강좌 {lectures.length}개
           </p>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <a
-            className={buttonVariants({ size: "lg" })}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <TriangleIcon data-icon="inline-start" />
-            Deploy Now
-          </a>
-          <a
-            className={buttonVariants({ size: "lg", variant: "outline" })}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-            <ArrowUpRightIcon data-icon="inline-end" />
-          </a>
-        </div>
-      </div>
+          <LectureTable lectures={lectures} />
+        </section>
+      )}
     </main>
   );
 }
