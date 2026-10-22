@@ -2,10 +2,11 @@ import { render, screen, within } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 
 import Home from "@/app/page";
+import { type FakeSites, type FmcsRow, fakeSites } from "@/features/pool-lectures/fake-sites";
 
-function siteRow(name: string, days: string, start: string, end: string) {
+function siteRow(name: string, days: string, start: string, end: string): FmcsRow {
   return {
-    comnm: "목동문화체육센터",
+    category1: "수영",
     category2: "성인남녀수영",
     class_nm: name,
     train_day_nm: days,
@@ -19,56 +20,83 @@ function siteRow(name: string, days: string, start: string, end: string) {
   };
 }
 
-// 소분류마다 같은 두 강좌를 돌려주는 가짜 사이트. 첫 소분류만 이름이 겹치지 않게 한다.
-function stubSite(rows = [
-  siteRow("월수금반", "월수금", "06:00", "06:50"),
-  siteRow("화목토반", "화목토", "07:00", "07:50"),
-]) {
+// 목동에는 월수금반과 화목토반이, 구로 신도림에는 구로반이 있는 가짜 사이트들.
+function stubSites(extra: Partial<FakeSites> = {}) {
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (input: string | URL | Request) => {
-      const isFirst = String(input).includes("category_cd=1000010000");
-      return new Response(JSON.stringify(isFirst ? rows : []));
+    fakeSites({
+      fmcs: {
+        YCS02: [
+          siteRow("월수금반", "월수금", "06:00", "06:50"),
+          siteRow("화목토반", "화목토", "07:00", "07:50"),
+        ],
+        GURO01: [siteRow("구로반", "월수금", "08:00", "08:50")],
+      },
+      ...extra,
     })
   );
 }
 
 async function renderHome(searchParams: Record<string, string | string[]> = {}) {
-  render(await Home({ searchParams: Promise.resolve(searchParams) }));
+  return render(await Home({ searchParams: Promise.resolve(searchParams) }));
 }
 
 afterEach(() => vi.unstubAllGlobals());
 
-test("강좌 목록을 수영장, 요일, 시간, 잔여석, 정원과 함께 표로 보여준다", async () => {
-  stubSite();
+test("강좌 목록을 구, 수영장, 요일, 시간, 잔여석, 정원과 함께 표로 보여준다", async () => {
+  stubSites();
 
   await renderHome();
 
   const table = screen.getByRole("table");
-  for (const header of ["수영장", "강좌명", "요일", "시간", "잔여석", "정원", "신청 상태"]) {
-    expect(
-      within(table).getByRole("columnheader", { name: header })
-    ).toBeInTheDocument();
+  for (const header of ["구", "수영장", "강좌명", "요일", "시간", "잔여석", "정원", "신청 상태"]) {
+    expect(within(table).getByRole("columnheader", { name: header })).toBeInTheDocument();
   }
   const row = within(table).getByRole("row", { name: /월수금반/ });
+  expect(within(row).getByText("양천구")).toBeInTheDocument();
   expect(within(row).getByText("목동문화체육센터")).toBeInTheDocument();
   expect(within(row).getByText("06:00~06:50")).toBeInTheDocument();
   expect(within(row).getByText("16")).toBeInTheDocument();
   expect(within(row).getByText("80")).toBeInTheDocument();
   expect(within(row).getByText("준비중")).toBeInTheDocument();
+  expect(within(table).getByRole("row", { name: /구로반/ })).toBeInTheDocument();
+});
+
+test("필터에서 수영장을 구별로 묶어 고를 수 있고 14곳이 모두 나온다", async () => {
+  stubSites();
+
+  const { container } = await renderHome();
+
+  for (const district of ["양천구", "구로구", "강서구", "영등포구", "은평구"]) {
+    expect(screen.getByText(district, { selector: "legend" })).toBeInTheDocument();
+  }
+  expect(container.querySelectorAll('input[name="pool"]')).toHaveLength(14);
+});
+
+test("고른 수영장의 강좌만 보여주고 고른 수영장은 선택된 채로 남는다", async () => {
+  stubSites();
+
+  const { container } = await renderHome({ pool: "guro-guro01" });
+
+  expect(screen.getByText("구로반")).toBeInTheDocument();
+  expect(screen.queryByText("월수금반")).not.toBeInTheDocument();
+  const checked = [...container.querySelectorAll<HTMLInputElement>('input[name="pool"]')]
+    .filter((input) => input.checked)
+    .map((input) => input.value);
+  expect(checked).toEqual(["guro-guro01"]);
 });
 
 test("고른 요일이 하나라도 겹치는 강좌만 보여준다", async () => {
-  stubSite();
+  stubSites();
 
-  await renderHome({ day: "월" });
+  await renderHome({ day: "화" });
 
-  expect(screen.getByText("월수금반")).toBeInTheDocument();
-  expect(screen.queryByText("화목토반")).not.toBeInTheDocument();
+  expect(screen.getByText("화목토반")).toBeInTheDocument();
+  expect(screen.queryByText("월수금반")).not.toBeInTheDocument();
 });
 
 test("조건에 맞는 강좌가 없으면 표 대신 없다는 안내를 보여준다", async () => {
-  stubSite();
+  stubSites();
 
   await renderHome({ day: "일" });
 
@@ -76,8 +104,30 @@ test("조건에 맞는 강좌가 없으면 표 대신 없다는 안내를 보여
   expect(screen.getByText("조건에 맞는 강좌가 없습니다")).toBeInTheDocument();
 });
 
-test("사이트를 읽지 못하면 조건에 맞는 강좌 없음과 구별되는 오류 안내를 보여준다", async () => {
-  vi.stubGlobal("fetch", vi.fn(async () => new Response("error", { status: 500 })));
+test("일부 수영장을 읽지 못하면 읽은 수영장의 강좌는 보여주고 읽지 못한 수영장을 알린다", async () => {
+  stubSites({ failing: ["gurosisul.or.kr"] });
+
+  await renderHome();
+
+  expect(screen.getByText("월수금반")).toBeInTheDocument();
+  const alert = screen.getByRole("alert");
+  expect(alert).toHaveTextContent("일부 수영장을 읽지 못했습니다");
+  expect(alert).toHaveTextContent("구로구 신도림생활체육관");
+  expect(alert).toHaveTextContent("구로구 50플러스수영장");
+});
+
+test("고른 수영장을 읽지 못했으면 강좌가 없다고 하지 않고 읽지 못했다고 알린다", async () => {
+  stubSites({ failing: ["gurosisul.or.kr"] });
+
+  await renderHome({ pool: "guro-guro01" });
+
+  expect(screen.getByRole("alert")).toHaveTextContent("구로구 신도림생활체육관");
+  expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  expect(screen.queryByText("조건에 맞는 강좌가 없습니다")).not.toBeInTheDocument();
+});
+
+test("모든 수영장을 읽지 못하면 조건에 맞는 강좌 없음과 구별되는 오류 안내를 보여준다", async () => {
+  vi.stubGlobal("fetch", fakeSites({ failing: ["://"] }));
 
   await renderHome();
 

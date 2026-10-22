@@ -13,12 +13,38 @@ import { Input } from "@/components/ui/input";
 
 import type { LectureFilter } from "./filter-lectures";
 import { WEEKDAYS } from "./filter-from-search-params";
+import { poolGroups } from "./pools";
 
-/** 요일과 시간대를 쿼리스트링(GET)으로 보내는 조건 폼. 서버가 다시 읽어 거른다. */
+/** 수영장, 요일, 시간대를 쿼리스트링(GET)으로 보내는 조건 폼. 서버가 다시 읽어 거른다. */
 export function LectureFilterForm({ filter }: { filter: LectureFilter }) {
   return (
     <form method="get" className="flex flex-col gap-6">
       <FieldGroup>
+        <FieldSet>
+          <FieldLegend variant="label">수영장</FieldLegend>
+          <div className="flex flex-col gap-4">
+            {poolGroups().map((group) => (
+              <FieldSet key={group.district}>
+                <FieldLegend variant="label" className="text-muted-foreground">
+                  {group.district}
+                </FieldLegend>
+                <div className="flex flex-wrap gap-x-5 gap-y-3">
+                  {group.pools.map((pool) => (
+                    <Field key={pool.id} orientation="horizontal" className="w-auto">
+                      <Checkbox
+                        id={`pool-${pool.id}`}
+                        name="pool"
+                        value={pool.id}
+                        defaultChecked={filter.poolIds?.includes(pool.id)}
+                      />
+                      <FieldLabel htmlFor={`pool-${pool.id}`}>{pool.name}</FieldLabel>
+                    </Field>
+                  ))}
+                </div>
+              </FieldSet>
+            ))}
+          </div>
+        </FieldSet>
         <FieldSet>
           <FieldLegend variant="label">요일</FieldLegend>
           <div className="flex flex-wrap gap-x-5 gap-y-3">

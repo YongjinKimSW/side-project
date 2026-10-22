@@ -6,6 +6,8 @@ export type LectureFilter = {
   /** "HH:MM". 없으면 그쪽은 제한하지 않는다. */
   from?: string;
   to?: string;
+  /** 고른 수영장. 없거나 비어 있으면 모든 수영장을 본다. */
+  poolIds?: string[];
 };
 
 /**
@@ -14,11 +16,13 @@ export type LectureFilter = {
  */
 export function filterLectures(lectures: Lecture[], filter: LectureFilter) {
   return lectures.filter((lecture) => {
+    const poolMatches =
+      !filter.poolIds?.length || filter.poolIds.includes(lecture.poolId);
     const dayMatches =
       filter.days.length === 0 ||
       filter.days.some((day) => lecture.days.includes(day));
     const startsBeforeEnd = !filter.to || lecture.startTime < filter.to;
     const endsAfterStart = !filter.from || lecture.endTime > filter.from;
-    return dayMatches && startsBeforeEnd && endsAfterStart;
+    return poolMatches && dayMatches && startsBeforeEnd && endsAfterStart;
   });
 }

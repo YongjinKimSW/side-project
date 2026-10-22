@@ -14,6 +14,7 @@ export function LectureTable({ lectures }: { lectures: Lecture[] }) {
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>구</TableHead>
           <TableHead>수영장</TableHead>
           <TableHead>소분류</TableHead>
           <TableHead>강좌명</TableHead>
@@ -27,8 +28,9 @@ export function LectureTable({ lectures }: { lectures: Lecture[] }) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {lectures.map((lecture) => (
-          <TableRow key={`${lecture.category}-${lecture.name}-${lecture.days}-${lecture.startTime}`}>
+        {lectures.map((lecture, index) => (
+          <TableRow key={`${lecture.poolId}-${index}`}>
+            <TableCell>{lecture.district}</TableCell>
             <TableCell>{lecture.poolName}</TableCell>
             <TableCell>{lecture.category}</TableCell>
             <TableCell>{lecture.name}</TableCell>

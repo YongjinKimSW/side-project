@@ -2,8 +2,16 @@ import { expect, test } from "vitest";
 
 import { filterLectures, type Lecture } from "@/features/pool-lectures";
 
-function lecture(name: string, days: string, startTime: string, endTime: string): Lecture {
+function lecture(
+  name: string,
+  days: string,
+  startTime: string,
+  endTime: string,
+  poolId = "yangcheon-ycs02"
+): Lecture {
   return {
+    poolId,
+    district: "양천구",
     poolName: "목동문화체육센터",
     category: "성인남녀수영",
     name,
@@ -48,4 +56,25 @@ test("요일과 시간대를 모두 고르면 두 조건을 모두 만족하는 
   const result = filterLectures(all, { days: ["화"], from: "06:00", to: "07:00" });
 
   expect(result).toEqual([tts0600]);
+});
+
+test("고른 수영장의 강좌만 보이고, 고르지 않으면 모든 수영장이 보인다", () => {
+  const guro = lecture("구로 강좌", "월수금", "06:00", "06:50", "guro-guro01");
+  const mixed = [mwf0600, guro];
+
+  expect(filterLectures(mixed, { days: [], poolIds: ["guro-guro01"] })).toEqual([guro]);
+  expect(filterLectures(mixed, { days: [], poolIds: [] })).toEqual(mixed);
+  expect(filterLectures(mixed, { days: [] })).toEqual(mixed);
+});
+
+test("수영장과 요일을 함께 고르면 두 조건을 모두 만족하는 강좌만 보인다", () => {
+  const guroTts = lecture("구로 화목토", "화목토", "06:00", "06:50", "guro-guro01");
+  const guroMwf = lecture("구로 월수금", "월수금", "06:00", "06:50", "guro-guro01");
+
+  const result = filterLectures([mwf0600, guroTts, guroMwf], {
+    days: ["월"],
+    poolIds: ["guro-guro01"],
+  });
+
+  expect(result).toEqual([guroMwf]);
 });
