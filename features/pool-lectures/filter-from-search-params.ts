@@ -1,3 +1,4 @@
+import { AUDIENCES } from "./audience";
 import type { LectureFilter } from "./filter-lectures";
 import { POOLS } from "./pools";
 
@@ -23,5 +24,8 @@ export function filterFromSearchParams(searchParams: SearchParams): LectureFilte
     from: time(searchParams.from),
     to: time(searchParams.to),
     poolIds: many(searchParams.pool).filter((id) => poolIds.includes(id)),
+    audiences: many(searchParams.audience).filter((id) =>
+      AUDIENCES.some((audience) => audience.id === id)
+    ),
   };
 }

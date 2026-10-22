@@ -86,6 +86,32 @@ test("고른 수영장의 강좌만 보여주고 고른 수영장은 선택된 �
   expect(checked).toEqual(["guro-guro01"]);
 });
 
+test("필터에서 대상 묶음 4개를 고를 수 있고, 고른 대상에 맞는 강좌만 보여준다", async () => {
+  stubSites({
+    fmcs: {
+      YCS02: [
+        { ...siteRow("어른반", "월수금", "06:00", "06:50"), target_age_name: "성인" },
+        { ...siteRow("어린이반", "월수금", "07:00", "07:50"), target_age_name: "초등생(1~6년)" },
+        { ...siteRow("모두반", "월수금", "08:00", "08:50"), target_age_name: "전체" },
+      ],
+    },
+  });
+
+  const { container } = await renderHome({ audience: "child" });
+
+  expect(screen.getByText("대상", { selector: "legend" })).toBeInTheDocument();
+  expect(container.querySelectorAll('input[name="audience"]')).toHaveLength(4);
+  expect(screen.getByText("어린이반")).toBeInTheDocument();
+  expect(screen.getByText("모두반")).toBeInTheDocument();
+  expect(screen.queryByText("어른반")).not.toBeInTheDocument();
+  const checked = [...container.querySelectorAll<HTMLInputElement>('input[name="audience"]')]
+    .filter((input) => input.checked)
+    .map((input) => input.value);
+  expect(checked).toEqual(["child"]);
+  // 표의 대상 열은 사이트의 표기를 그대로 보여 준다.
+  expect(screen.getByText("초등생(1~6년)")).toBeInTheDocument();
+});
+
 test("고른 요일이 하나라도 겹치는 강좌만 보여준다", async () => {
   stubSites();
 

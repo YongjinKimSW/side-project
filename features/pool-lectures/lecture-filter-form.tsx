@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
+import { AUDIENCES } from "./audience";
 import type { LectureFilter } from "./filter-lectures";
 import { WEEKDAYS } from "./filter-from-search-params";
 import { poolGroups } from "./pools";
@@ -42,6 +43,22 @@ export function LectureFilterForm({ filter }: { filter: LectureFilter }) {
                   ))}
                 </div>
               </FieldSet>
+            ))}
+          </div>
+        </FieldSet>
+        <FieldSet>
+          <FieldLegend variant="label">대상</FieldLegend>
+          <div className="flex flex-wrap gap-x-5 gap-y-3">
+            {AUDIENCES.map((audience) => (
+              <Field key={audience.id} orientation="horizontal" className="w-auto">
+                <Checkbox
+                  id={`audience-${audience.id}`}
+                  name="audience"
+                  value={audience.id}
+                  defaultChecked={filter.audiences?.includes(audience.id)}
+                />
+                <FieldLabel htmlFor={`audience-${audience.id}`}>{audience.label}</FieldLabel>
+              </Field>
             ))}
           </div>
         </FieldSet>

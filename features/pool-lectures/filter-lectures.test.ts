@@ -67,6 +67,86 @@ test("고른 수영장의 강좌만 보이고, 고르지 않으면 모든 수영
   expect(filterLectures(mixed, { days: [] })).toEqual(mixed);
 });
 
+// 스펙(target-filter)의 "대상 표기와 묶음의 대응" 표. "all"은 대상 제한이 없다는 뜻이다.
+const audienceTable: [target: string, groups: string[] | "all"][] = [
+  ["성인", ["adult"]],
+  ["성인남녀", ["adult"]],
+  ["성인남여", ["adult"]],
+  ["성인여성", ["adult"]],
+  ["성인 남성", ["adult"]],
+  ["성인남녀(효도)", ["adult"]],
+  ["청소년", ["teen"]],
+  ["중.고생", ["teen"]],
+  ["중,고생", ["teen"]],
+  ["청소년/성인", ["teen", "adult"]],
+  ["청소년~성인", ["teen", "adult"]],
+  ["청소년~성인(남)", ["teen", "adult"]],
+  ["성인,청소년", ["teen", "adult"]],
+  ["청소년/성인남녀", ["teen", "adult"]],
+  ["청소년이상", ["teen", "adult", "senior"]],
+  ["어린이/청소년/성인남녀", ["child", "teen", "adult"]],
+  ["성인남녀/청소년/어린이", ["child", "teen", "adult"]],
+  ["초등학생", ["child"]],
+  ["초등생", ["child"]],
+  ["초등생(1~6년)", ["child"]],
+  ["초등4학년이상", ["child"]],
+  ["어린이", ["child"]],
+  ["어린이(8~13세)", ["child"]],
+  ["유아(5~7세)", ["child"]],
+  ["영유아(6~7세)", ["child"]],
+  ["영.유아(일반)", ["child"]],
+  ["7세~초등학생", ["child"]],
+  ["7,8,9세", ["child"]],
+  ["65세이상", ["senior"]],
+  ["만65세이상", ["senior"]],
+  ["만60세이상", ["senior"]],
+  ["65세이상성인남녀", ["adult", "senior"]],
+  ["-", "all"],
+  ["전체", "all"],
+  ["구분없음", "all"],
+  ["해당없음", "all"],
+  // 표에 없는 새 표기는 숨기지 않고 대상 제한 없음으로 본다.
+  ["처음 보는 표기", "all"],
+];
+
+test.each(audienceTable)(
+  "대상 표기 %s 는 스펙의 묶음에서만 보인다",
+  (target, groups) => {
+    const swim = { ...lecture("강좌", "월수금", "06:00", "06:50"), target };
+
+    for (const group of ["child", "teen", "adult", "senior"]) {
+      const visible = filterLectures([swim], { days: [], audiences: [group] }).length === 1;
+      expect(visible, `${target} / ${group}`).toBe(groups === "all" || groups.includes(group));
+    }
+  }
+);
+
+test("대상을 고르지 않으면 모든 대상이 보이고, 여러 묶음을 고르면 하나라도 해당하는 강좌가 보인다", () => {
+  const adult = { ...lecture("성인반", "월수금", "06:00", "06:50"), target: "성인" };
+  const child = { ...lecture("어린이반", "월수금", "06:00", "06:50"), target: "초등학생" };
+  const senior = { ...lecture("어르신반", "월수금", "06:00", "06:50"), target: "65세이상" };
+  const all = [adult, child, senior];
+
+  expect(filterLectures(all, { days: [] })).toEqual(all);
+  expect(filterLectures(all, { days: [], audiences: [] })).toEqual(all);
+  expect(filterLectures(all, { days: [], audiences: ["child", "senior"] })).toEqual([child, senior]);
+});
+
+test("대상은 수영장, 요일과 함께 고르면 모든 조건을 만족하는 강좌만 보인다", () => {
+  const match = { ...lecture("맞음", "월수금", "06:00", "06:50", "guro-guro01"), target: "성인" };
+  const wrongAudience = { ...match, name: "대상 다름", target: "초등학생" };
+  const wrongPool = { ...match, name: "수영장 다름", poolId: "yangcheon-ycs02" };
+  const wrongDay = { ...match, name: "요일 다름", days: "화목토" };
+
+  const result = filterLectures([match, wrongAudience, wrongPool, wrongDay], {
+    days: ["월"],
+    poolIds: ["guro-guro01"],
+    audiences: ["adult"],
+  });
+
+  expect(result).toEqual([match]);
+});
+
 test("수영장과 요일을 함께 고르면 두 조건을 모두 만족하는 강좌만 보인다", () => {
   const guroTts = lecture("구로 화목토", "화목토", "06:00", "06:50", "guro-guro01");
   const guroMwf = lecture("구로 월수금", "월수금", "06:00", "06:50", "guro-guro01");
