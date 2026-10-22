@@ -112,7 +112,17 @@ test("필터에서 대상 묶음 4개를 고를 수 있고, 고른 대상에 맞
   expect(screen.getByText("초등생(1~6년)")).toBeInTheDocument();
 });
 
-test("고른 요일이 하나라도 겹치는 강좌만 보여준다", async () => {
+test("고른 요일이 모두 수업 요일에 들어 있는 강좌만 보여준다", async () => {
+  stubSites();
+
+  await renderHome({ day: ["월", "화"] });
+
+  expect(screen.queryByText("월수금반")).not.toBeInTheDocument();
+  expect(screen.queryByText("화목토반")).not.toBeInTheDocument();
+  expect(screen.getByText("조건에 맞는 강좌가 없습니다")).toBeInTheDocument();
+});
+
+test("요일 하나를 고르면 그 요일에 수업이 있는 강좌가 보인다", async () => {
   stubSites();
 
   await renderHome({ day: "화" });

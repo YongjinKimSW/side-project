@@ -35,10 +35,16 @@ test("아무 조건도 고르지 않으면 모든 강좌가 보인다", () => {
   expect(filterLectures(all, { days: [] })).toEqual(all);
 });
 
-test("요일이 하나라도 겹치는 강좌만 보인다", () => {
-  const result = filterLectures(all, { days: ["월"] });
+test("고른 요일이 모두 수업 요일에 들어 있는 강좌만 보인다", () => {
+  const monToSat = lecture("월~토", "월화수목금토", "09:00", "09:50");
+  const lectures = [mwf0600, mwf0700, tts0600, monToSat];
 
-  expect(result).toEqual([mwf0600, mwf0700]);
+  expect(filterLectures(lectures, { days: ["월"] })).toEqual([mwf0600, mwf0700, monToSat]);
+  expect(filterLectures(lectures, { days: ["월", "수"] })).toEqual([mwf0600, mwf0700, monToSat]);
+  // 월수금 강좌에는 화요일 수업이 없으므로 월과 화를 모두 고르면 보이지 않는다.
+  expect(filterLectures(lectures, { days: ["월", "화"] })).toEqual([monToSat]);
+  expect(filterLectures(lectures, { days: ["월", "토"] })).toEqual([monToSat]);
+  expect(filterLectures(lectures, { days: ["일"] })).toEqual([]);
 });
 
 test("시간대와 조금이라도 겹치는 강좌만 보이고, 맞닿기만 하면 제외한다", () => {
